@@ -531,6 +531,7 @@ namespace PanCardView
                 if (ItemsSource != null)
                 {
                     var oldView = CurrentView;
+                    CleanView2(CurrentView);
                     CurrentView = InitViews(FrontViewProcessor, AnimationDirection.Current, Enumerable.Empty<View>(), SelectedIndex).FirstOrDefault();
                     var newView = CurrentView;
 
@@ -668,6 +669,8 @@ namespace PanCardView
 
             var oldView = CurrentView;
             SetupBackViews(OldIndex);
+
+            CleanViews(NextViews); // <- this shoulnd be here
             ResetActiveInactiveBackViews(realDirection);
             var newView = InitViews(BackViewProcessor, realDirection, Enumerable.Empty<View>(), SelectedIndex).FirstOrDefault();
             SwapViews(realDirection);
@@ -784,6 +787,11 @@ namespace PanCardView
                 indeces[i] = index + 1 + i;
             }
 
+            if (NextViews != null && NextViews.Any() && !IsViewCacheEnabled)
+            {
+                CleanViews(NextViews);
+            }
+
             NextViews = InitViews(BackViewProcessor, AnimationDirection.Next, Enumerable.Repeat(CurrentView, 1), indeces);
         }
 
@@ -800,6 +808,11 @@ namespace PanCardView
                     incValue = -incValue;
                 }
                 indeces[i] = index + incValue;
+            }
+
+            if (PrevViews != null && PrevViews.Any() && !IsViewCacheEnabled)
+            {
+                CleanViews(PrevViews);
             }
 
             PrevViews = InitViews(BackViewProcessor, AnimationDirection.Prev, Enumerable.Repeat(CurrentView, 1).Union(NextViews), indeces);
@@ -1408,6 +1421,25 @@ namespace PanCardView
                 view.BindingContext = null;
             }
             BackViewProcessor.HandleCleanView(Enumerable.Repeat(view, 1), this);
+        }
+
+        private void CleanViews(IEnumerable<View> views)
+        {
+            foreach (var view in views)
+            {
+                CleanView2(view);
+            }
+        }
+
+        private void CleanView2(View view)
+        {
+            if (view == null)
+            {
+                return;
+            }
+
+            view.Behaviors.Remove(_contextAssignedBehavior);
+            view.BindingContext = null;
         }
 
         private void SetItemsSource(IEnumerable oldCollection)
